@@ -62,7 +62,7 @@ export class WebpackComponentConfigPlugin {
       matches.forEach((match) => {
         const configContent = match.replace(/<component-config>|<\/component-config>/g, '');
         try {
-          const componentConfig = parseJson(configContent.toString(), true, path.basename(resource));
+          const componentConfig = parseJson(configContent.toString());
 
           const outputPath = getOutputJsonPath(resource);
           this.map.set(outputPath, componentConfig);
