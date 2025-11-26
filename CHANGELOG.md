@@ -1,3 +1,13 @@
+## [0.0.15](https://github.com/uni-toolkit/uni-toolkit/compare/v0.0.14...v0.0.15) (2025-11-26)
+
+
+### Code Refactoring
+
+* **webpack-plugin-component-config:** add support for node 14 ([#4](https://github.com/uni-toolkit/uni-toolkit/issues/4)) ([fb5b6c7](https://github.com/uni-toolkit/uni-toolkit/commit/fb5b6c729f93afe88bcae824e88e49474f4b7cd2))
+* **webpack-plugin-component-config:** add support for node 16 ([096d8bc](https://github.com/uni-toolkit/uni-toolkit/commit/096d8bcfe10113d9e71003068da63a6937631f2d))
+
+
+
 ## [0.0.14](https://github.com/uni-toolkit/uni-toolkit/compare/v0.0.13...v0.0.14) (2025-11-12)
 
 
