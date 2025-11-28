@@ -1,3 +1,12 @@
+## [0.0.16](https://github.com/uni-toolkit/uni-toolkit/compare/v0.0.15...v0.0.16) (2025-11-28)
+
+
+### Code Refactoring
+
+* **unplugin-json-optimization:** simplify entry processing ([#5](https://github.com/uni-toolkit/uni-toolkit/issues/5)) ([1ec53b0](https://github.com/uni-toolkit/uni-toolkit/commit/1ec53b043df54c84820b132c5bdd2279a4e7f171))
+
+
+
 ## [0.0.15](https://github.com/uni-toolkit/uni-toolkit/compare/v0.0.14...v0.0.15) (2025-11-26)
 
 
