@@ -5,6 +5,7 @@
   "scripts": {
     "format": "biome format --write",
     "lint": "biome lint --write",
+    "check": "biome check --write",
     "build": "jiti scripts/build.ts",
     "release": "pnpm build && vr release",
     "postinstall": "simple-git-hooks"
@@ -25,7 +26,8 @@
   "lint-staged": {
     "packages/*/src/**/*.ts": [
       "biome lint --write",
-      "biome format --write"
+      "biome format --write",
+      "biome check --write"
     ]
   }
 }

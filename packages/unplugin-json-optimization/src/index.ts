@@ -1,9 +1,9 @@
-import type { UnpluginFactory } from 'unplugin';
-import type { Options } from './types';
-import { createUnplugin } from 'unplugin';
-import type { OutputAsset, OutputChunk } from 'rollup';
-import { createFilter } from '@rollup/pluginutils';
 import path from 'node:path';
+import { createFilter } from '@rollup/pluginutils';
+import type { OutputAsset, OutputChunk } from 'rollup';
+import type { UnpluginFactory } from 'unplugin';
+import { createUnplugin } from 'unplugin';
+import type { Options } from './types';
 
 function replaceRequirePaths(code: string, pathMapper: (path: string) => string) {
   return code.replace(/require\s*\(\s*(["'])([^"']+)\1\s*\)/g, (match, quote, path) => {

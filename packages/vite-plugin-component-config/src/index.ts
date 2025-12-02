@@ -1,10 +1,10 @@
-import { getOutputJsonPath, isMiniProgram } from '@uni_toolkit/shared';
-import type { PluginOption } from 'vite';
-import { createFilter, type FilterPattern } from '@rollup/pluginutils';
-import path from 'node:path';
 import fs from 'node:fs';
+import path from 'node:path';
 import { parseJson } from '@dcloudio/uni-cli-shared';
+import { createFilter, type FilterPattern } from '@rollup/pluginutils';
+import { getOutputJsonPath, isMiniProgram } from '@uni_toolkit/shared';
 import { merge } from 'lodash-es';
+import type { PluginOption } from 'vite';
 
 export interface ComponentConfigPluginOptions {
   include?: FilterPattern;

@@ -1,7 +1,7 @@
-import type { UnpluginFactory } from 'unplugin';
-import type { Options } from './types';
-import { createUnplugin } from 'unplugin';
 import type { OutputAsset } from 'rollup';
+import type { UnpluginFactory } from 'unplugin';
+import { createUnplugin } from 'unplugin';
+import type { Options } from './types';
 
 export const unpluginFactory: UnpluginFactory<Options | undefined> = (options = { mode: 'production' }) => {
   // 检查是否应该启用插件
