@@ -185,11 +185,11 @@ function buildMarkdown(report: ComponentInsightReport) {
   for (const item of report.components) {
     lines.push(`## ${item.component}`);
     lines.push('');
-    lines.push(`- 所属分包：${item.componentPackage}`);
+    lines.push(`- 所属包：${item.componentPackage}`);
     lines.push(`- 总使用次数：${item.totalUsageCount}`);
     lines.push(`- 使用页面数：${item.pageUsageCount}`);
     lines.push('');
-    lines.push('| 页面 | 分包 | 使用次数 |');
+    lines.push('| 页面 | 包 | 使用次数 |');
     lines.push('| --- | --- | --- |');
     for (const page of item.pages) {
       lines.push(`| ${page.page} | ${page.packageName} | ${page.usageCount} |`);
