@@ -33,9 +33,6 @@ interface ComponentInsightItem {
 }
 
 interface ComponentInsightReport {
-  generatedAt: string;
-  inputDir: string;
-  outputDir: string;
   suggestionEnabled: boolean;
   summary: {
     pageCount: number;
@@ -240,7 +237,7 @@ function logSummary(report: ComponentInsightReport) {
     console.info('');
     console.info(pc.bold(pc.blue(`组件：${item.component}`)));
     console.info(
-      `${pc.dim('所属分包：')}${item.componentPackage}  ${pc.dim('使用次数：')}${item.totalUsageCount}  ${pc.dim('涉及分包：')}${packageNames}`,
+      `${pc.dim('所属包：')}${item.componentPackage}  ${pc.dim('使用次数：')}${item.totalUsageCount}  ${pc.dim('涉及包：')}${packageNames}`,
     );
     for (const suggestion of item.suggestions) {
       console.info(`${pc.yellow('建议：')}${suggestion}`);
@@ -392,6 +389,12 @@ export default function vitePluginComponentInsight(options: VitePluginComponentI
         const usedByMainAndSubPackages = involvedPackages.includes('main') && involvedPackages.length > 1;
         const usedByMultipleSubPackages = !involvedPackages.includes('main') && involvedPackages.length > 1;
         const asyncPlaceholderPackages = asyncPlaceholderPackagesMap.get(componentPath) ?? new Set<string>();
+        const coveredBySingleAsyncPlaceholder =
+          onlyUsedInOnePackage &&
+          singlePackageName?.startsWith('sub:') &&
+          componentPackage.startsWith('sub:') &&
+          componentPackage !== singlePackageName &&
+          asyncPlaceholderPackages.has(singlePackageName);
         const coveredByAsyncPlaceholder =
           usedByMultipleSubPackages &&
           involvedPackages.every((packageName) => asyncPlaceholderPackages.has(packageName));
@@ -399,6 +402,7 @@ export default function vitePluginComponentInsight(options: VitePluginComponentI
           !resolvedOptions.enableSuggestions ||
           (onlyUsedInOnePackage && componentPackage === singlePackageName) ||
           (usedByMainAndSubPackages && componentPackage === 'main') ||
+          coveredBySingleAsyncPlaceholder ||
           coveredByAsyncPlaceholder;
 
         if (noNeedSuggestion) {
@@ -417,16 +421,12 @@ export default function vitePluginComponentInsight(options: VitePluginComponentI
           suggestions.push(`该组件仅在 ${singlePackageName} 使用，建议考虑移动到对应分包。`);
         }
 
-        if (usedByMultipleSubPackages) {
-          suggestions.push('该组件被多个分包共用，建议评估抽到公共目录。');
-        }
-
-        if (pagesForComponent.length === 1 && totalUsageCount <= 2) {
-          suggestions.push('该组件仅在单页少量使用，可评估是否需要继续独立维护。');
+        if (usedByMultipleSubPackages && componentPackage === 'main') {
+          suggestions.push('该组件被多个分包使用，建议移动到分包并配置 componentPlaceholder 异步化。');
         }
 
         if (usedByMainAndSubPackages && componentPackage !== 'main') {
-          suggestions.push('该组件位于分包目录，但主包也在使用，建议检查目录归属。');
+          suggestions.push('该组件同时被主包和分包使用，建议移动到主包。');
         }
 
         componentItems.push({
@@ -447,9 +447,6 @@ export default function vitePluginComponentInsight(options: VitePluginComponentI
       );
 
       const report: ComponentInsightReport = {
-        generatedAt: new Date().toISOString(),
-        inputDir,
-        outputDir,
         suggestionEnabled: resolvedOptions.enableSuggestions,
         summary: {
           pageCount: pageUsageMap.size,
