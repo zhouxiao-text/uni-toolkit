@@ -1,3 +1,21 @@
+## [0.0.17](https://github.com/uni-toolkit/uni-toolkit/compare/v0.0.16...v0.0.17) (2026-04-12)
+
+
+### Code Refactoring
+
+* add picocolors to improve logs ([d63627c](https://github.com/uni-toolkit/uni-toolkit/commit/d63627c6ff405d7d938ec734ccbd26e116927b54))
+* clean code ([bc8c17c](https://github.com/uni-toolkit/uni-toolkit/commit/bc8c17c452dd8249e20d2251b188e446cdea9857))
+* clean code ([c8476db](https://github.com/uni-toolkit/uni-toolkit/commit/c8476db1996caedbcbb47702fe2b6c09a299d72f))
+* optimize tips ([0fff0f9](https://github.com/uni-toolkit/uni-toolkit/commit/0fff0f9d85987fd0650f11a340a935efff8147ec))
+* **shared:** provide stricter typing for isMiniProgram ([#8](https://github.com/uni-toolkit/uni-toolkit/issues/8)) ([1eddb10](https://github.com/uni-toolkit/uni-toolkit/commit/1eddb106070128fcdbec2a4a2bc2b58b67bb08d7))
+
+
+### Features
+
+* add vite-plugin-component-insight ([4c2e9b4](https://github.com/uni-toolkit/uni-toolkit/commit/4c2e9b46c00e6f7c0a7000915df45a5a8b0d2e01))
+
+
+
 ## [0.0.16](https://github.com/uni-toolkit/uni-toolkit/compare/v0.0.15...v0.0.16) (2025-11-28)
 
 
