@@ -34,6 +34,12 @@ uni-app 项目设计的插件集合，提供各种实用的构建工具和开发
 
 - [@uni_toolkit/unplugin-json-optimization](./packages/unplugin-json-optimization/README.md)
 
+## 交流群
+
+扫码加入 uni-app 交流群
+
+![uni-app 交流群](./assets/group.jpg)
+
 ## 📄 许可证
 
 [MIT](LICENSE)
