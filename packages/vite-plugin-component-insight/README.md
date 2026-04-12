@@ -1,16 +1,13 @@
 # @uni_toolkit/vite-plugin-component-insight
 
-一个用于 uni-app Vue3 项目的 Vite 插件，用于分析组件被哪些页面使用、使用了多少次，并结合主包与分包关系给出简洁的中文提示。
-
-> [!TIP]
-> Node.js >= 18.0.0
+一个用于 uni-app Vue3 项目的 Vite 插件，用于分析组件被哪些页面使用、使用了多少次，并结合主包与分包关系在控制台输出建议。
 
 ## 功能特性
 
 - 分析组件被哪些页面使用
 - 基于构建产物中的 usingComponents 统计组件依赖次数，包含嵌套组件链路
-- 结合主包和分包信息生成简洁中文提示
-- 默认在控制台直接输出建议
+- 结合主包和分包信息生成建议
+- 默认在控制台直接输出分析结果和建议
 - 按需输出 Markdown 报告，便于归档和二次处理
 - 兼容 uni-app Vue3 小程序构建流程，支持 easycom 解析结果
 
@@ -49,46 +46,26 @@ componentInsight({
 })
 ```
 
+如果只想生成 Markdown、不输出控制台，可以这样配置：
+
+```ts
+componentInsight({
+  logToConsole: false,
+  reportMarkdownPath: 'logs/component-insight-report.md',
+})
+```
+
 ## 配置项
 
 ```ts
 interface VitePluginComponentInsightOptions {
   reportMarkdownPath?: string;
-  reportMarkdownFile?: string;
-  enableSuggestions?: boolean;
   logToConsole?: boolean;
 }
 ```
 
 - reportMarkdownPath: 自定义 Markdown 报告输出路径，不传则不生成 Markdown
-- reportMarkdownFile: reportMarkdownPath 的兼容别名
-- enableSuggestions: 是否生成提示，默认开启
 - logToConsole: 是否输出控制台日志，默认开启
-
-## 输出说明
-
-控制台和 Markdown 会包含以下信息：
-
-- 组件路径
-- 组件所属包范围，主包或具体分包
-- 总使用次数
-- 使用该组件的页面列表
-- 基于主包和分包关系的中文提示
-
-常见建议包括：
-
-- 组件只被单一分包使用时，建议迁移到对应分包
-- 组件被主包和多个分包共用时，建议保留在公共位置
-- 组件只在单页少量使用时，建议评估是否需要保持独立组件
-
-## 注意事项
-
-1. 当前分析完全基于 uni-app 小程序构建产物中的 JSON 文件和 usingComponents 信息，因此只在 mp- 平台构建时生效。
-2. 报告中的使用次数指 usingComponents 依赖引用次数，不是模板标签的真实渲染次数。
-3. 子包根目录通过 @dcloudio/uni-cli-shared 提供的方法获取。
-4. 组件依赖会递归累加嵌套组件，因此可以反映页面最终依赖链路。
-5. 如果某些组件不经过 usingComponents 产出，报告中不会纳入统计。
-6. 默认只输出控制台建议，只有显式传入 reportMarkdownPath 时才会生成 Markdown 文件。
 
 ## 许可证
 

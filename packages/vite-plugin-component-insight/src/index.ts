@@ -33,7 +33,6 @@ interface ComponentInsightItem {
 }
 
 interface ComponentInsightReport {
-  suggestionEnabled: boolean;
   summary: {
     pageCount: number;
     componentCount: number;
@@ -44,15 +43,11 @@ interface ComponentInsightReport {
 
 export interface VitePluginComponentInsightOptions {
   reportMarkdownPath?: string;
-  reportMarkdownFile?: string;
-  enableSuggestions?: boolean;
   logToConsole?: boolean;
 }
 
 const DEFAULT_OPTIONS: Required<VitePluginComponentInsightOptions> = {
   reportMarkdownPath: '',
-  reportMarkdownFile: '',
-  enableSuggestions: true,
   logToConsole: true,
 };
 
@@ -200,7 +195,7 @@ function buildMarkdown(report: ComponentInsightReport) {
       lines.push(`| ${page.page} | ${page.packageName} | ${page.usageCount} |`);
     }
     lines.push('');
-    if (report.suggestionEnabled && item.suggestions.length > 0) {
+    if (item.suggestions.length > 0) {
       lines.push('### 提示');
       lines.push('');
       for (const suggestion of item.suggestions) {
@@ -221,10 +216,6 @@ function logSummary(report: ComponentInsightReport) {
     `已分析: ${pc.cyan(String(report.summary.reportedComponentCount))}`,
   ];
   console.info(summaryLines.join(' | '));
-
-  if (!report.suggestionEnabled) {
-    return;
-  }
 
   const suggestionItems = report.components.filter((item) => item.suggestions.length > 0);
   if (suggestionItems.length === 0) {
@@ -250,8 +241,9 @@ export default function vitePluginComponentInsight(options: VitePluginComponentI
     ...DEFAULT_OPTIONS,
     ...options,
   };
-  const markdownOutputPath = resolvedOptions.reportMarkdownPath || resolvedOptions.reportMarkdownFile;
-  const reportMarkdownPath = markdownOutputPath ? resolveOutputPath(markdownOutputPath) : '';
+  const reportMarkdownPath = resolvedOptions.reportMarkdownPath
+    ? resolveOutputPath(resolvedOptions.reportMarkdownPath)
+    : '';
 
   return {
     name: 'vite-plugin-component-insight',
@@ -399,7 +391,6 @@ export default function vitePluginComponentInsight(options: VitePluginComponentI
           usedByMultipleSubPackages &&
           involvedPackages.every((packageName) => asyncPlaceholderPackages.has(packageName));
         const noNeedSuggestion =
-          !resolvedOptions.enableSuggestions ||
           (onlyUsedInOnePackage && componentPackage === singlePackageName) ||
           (usedByMainAndSubPackages && componentPackage === 'main') ||
           coveredBySingleAsyncPlaceholder ||
@@ -447,7 +438,6 @@ export default function vitePluginComponentInsight(options: VitePluginComponentI
       );
 
       const report: ComponentInsightReport = {
-        suggestionEnabled: resolvedOptions.enableSuggestions,
         summary: {
           pageCount: pageUsageMap.size,
           componentCount: Array.from(outputJsonMap.values()).filter((item) => item.isComponent).length,
