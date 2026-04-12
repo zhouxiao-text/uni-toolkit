@@ -42,7 +42,8 @@
   },
   "dependencies": {
     "@dcloudio/uni-cli-shared": "3.0.0-alpha-4080120250820001",
-    "@uni_toolkit/shared": "workspace:*"
+    "@uni_toolkit/shared": "workspace:*",
+    "picocolors": "^1.1.1"
   },
   "devDependencies": {
     "typescript": "catalog:",

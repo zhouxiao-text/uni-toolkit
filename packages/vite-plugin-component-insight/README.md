@@ -10,7 +10,8 @@
 - 分析组件被哪些页面使用
 - 基于构建产物中的 usingComponents 统计组件依赖次数，包含嵌套组件链路
 - 结合主包和分包信息生成简洁中文提示
-- 输出 JSON 和 Markdown 两份报告，便于查看和二次处理
+- 默认在控制台直接输出建议
+- 按需输出 Markdown 报告，便于归档和二次处理
 - 兼容 uni-app Vue3 小程序构建流程，支持 easycom 解析结果
 
 ## 安装
@@ -32,35 +33,41 @@ import componentInsight from '@uni_toolkit/vite-plugin-component-insight';
 
 export default defineConfig({
   plugins: [
-    componentInsight(),
     uni(),
+    componentInsight(),
   ],
 });
 ```
 
-插件会在小程序构建结束后，在项目根目录默认生成以下文件：
+插件默认不会生成文件，会在控制台直接输出分析结果和建议。
 
-- logs/component-insight-report.json
-- logs/component-insight-report.md
+如果需要输出 Markdown，可以这样配置：
+
+```ts
+componentInsight({
+  reportMarkdownPath: 'logs/component-insight-report.md',
+})
+```
 
 ## 配置项
 
 ```ts
 interface VitePluginComponentInsightOptions {
-  reportJsonPath?: string;
   reportMarkdownPath?: string;
+  reportMarkdownFile?: string;
   enableSuggestions?: boolean;
   logToConsole?: boolean;
 }
 ```
 
-- reportJsonPath: 自定义 JSON 报告输出路径
-- reportMarkdownPath: 自定义 Markdown 报告输出路径
+- reportMarkdownPath: 自定义 Markdown 报告输出路径，不传则不生成 Markdown
+- reportMarkdownFile: reportMarkdownPath 的兼容别名
 - enableSuggestions: 是否生成提示，默认开启
+- logToConsole: 是否输出控制台日志，默认开启
 
 ## 输出说明
 
-报告会包含以下信息：
+控制台和 Markdown 会包含以下信息：
 
 - 组件路径
 - 组件所属包范围，主包或具体分包
@@ -81,6 +88,7 @@ interface VitePluginComponentInsightOptions {
 3. 子包根目录通过 @dcloudio/uni-cli-shared 提供的方法获取。
 4. 组件依赖会递归累加嵌套组件，因此可以反映页面最终依赖链路。
 5. 如果某些组件不经过 usingComponents 产出，报告中不会纳入统计。
+6. 默认只输出控制台建议，只有显式传入 reportMarkdownPath 时才会生成 Markdown 文件。
 
 ## 许可证
 

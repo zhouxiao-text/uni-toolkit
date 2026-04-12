@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { parseJson, parseSubpackagesRootOnce } from '@dcloudio/uni-cli-shared';
 import { isMiniProgram } from '@uni_toolkit/shared';
+import pc from 'picocolors';
 import type { PluginOption } from 'vite';
 
 interface PageEntry {
@@ -15,6 +16,7 @@ interface OutputJsonRecord {
   logicalPath: string;
   isComponent: boolean;
   usingComponents: Record<string, string>;
+  componentPlaceholder: Record<string, string>;
 }
 
 interface ComponentInsightItem {
@@ -44,19 +46,15 @@ interface ComponentInsightReport {
 }
 
 export interface VitePluginComponentInsightOptions {
-  reportJsonPath?: string;
   reportMarkdownPath?: string;
-  reportJsonFile?: string;
   reportMarkdownFile?: string;
   enableSuggestions?: boolean;
   logToConsole?: boolean;
 }
 
 const DEFAULT_OPTIONS: Required<VitePluginComponentInsightOptions> = {
-  reportJsonPath: 'logs/component-insight-report.json',
-  reportMarkdownPath: 'logs/component-insight-report.md',
-  reportJsonFile: 'logs/component-insight-report.json',
-  reportMarkdownFile: 'logs/component-insight-report.md',
+  reportMarkdownPath: '',
+  reportMarkdownFile: '',
   enableSuggestions: true,
   logToConsole: true,
 };
@@ -93,7 +91,7 @@ function readPages(inputDir: string) {
     subPackages?: Array<{ root?: string; pages?: Array<{ path: string }> }>;
     subpackages?: Array<{ root?: string; pages?: Array<{ path: string }> }>;
   }>(pagesJsonPath);
-  const platform = (process.env.UNI_PLATFORM || 'mp-weixin') as Parameters<typeof parseSubpackagesRootOnce>[1];
+  const platform = process.env.UNI_PLATFORM as Parameters<typeof parseSubpackagesRootOnce>[1];
   const subPackageRoots = parseSubpackagesRootOnce(inputDir, platform).map((root) =>
     normalizeSlashes(root).replace(/^\/+|\/+$/g, ''),
   );
@@ -186,12 +184,9 @@ function buildMarkdown(report: ComponentInsightReport) {
   const lines: string[] = [
     '# 组件分析报告',
     '',
-    `- 生成时间：${report.generatedAt}`,
     `- 页面数量：${report.summary.pageCount}`,
     `- 组件数量：${report.summary.componentCount}`,
     `- 已分析组件数：${report.summary.reportedComponentCount}`,
-    `- 提示开关：${report.suggestionEnabled ? '开启' : '关闭'}`,
-    '- 统计说明：使用次数基于构建产物中 usingComponents 的依赖引用次数。',
     '',
   ];
 
@@ -208,7 +203,7 @@ function buildMarkdown(report: ComponentInsightReport) {
       lines.push(`| ${page.page} | ${page.packageName} | ${page.usageCount} |`);
     }
     lines.push('');
-    if (report.suggestionEnabled) {
+    if (report.suggestionEnabled && item.suggestions.length > 0) {
       lines.push('### 提示');
       lines.push('');
       for (const suggestion of item.suggestions) {
@@ -223,18 +218,33 @@ function buildMarkdown(report: ComponentInsightReport) {
 
 function logSummary(report: ComponentInsightReport) {
   const summaryLines = [
-    '[vite-plugin-component-insight] 分析完成',
-    `页面数: ${report.summary.pageCount}`,
-    `组件数: ${report.summary.componentCount}`,
-    `已分析: ${report.summary.reportedComponentCount}`,
+    pc.bold(pc.green('[vite-plugin-component-insight] 分析完成')),
+    `页面数: ${pc.cyan(String(report.summary.pageCount))}`,
+    `组件数: ${pc.cyan(String(report.summary.componentCount))}`,
+    `已分析: ${pc.cyan(String(report.summary.reportedComponentCount))}`,
   ];
   console.info(summaryLines.join(' | '));
 
-  for (const item of report.components.slice(0, 10)) {
+  if (!report.suggestionEnabled) {
+    return;
+  }
+
+  const suggestionItems = report.components.filter((item) => item.suggestions.length > 0);
+  if (suggestionItems.length === 0) {
+    console.info(pc.green('未发现需要关注的组件分包建议。'));
+    return;
+  }
+
+  for (const item of suggestionItems) {
     const packageNames = Array.from(new Set(item.pages.map((page) => page.packageName))).join(', ');
+    console.info('');
+    console.info(pc.bold(pc.blue(`组件：${item.component}`)));
     console.info(
-      `[vite-plugin-component-insight] ${item.component} | 使用次数=${item.totalUsageCount} | 页面数=${item.pageUsageCount} | 分包=${packageNames}`,
+      `${pc.dim('所属分包：')}${item.componentPackage}  ${pc.dim('使用次数：')}${item.totalUsageCount}  ${pc.dim('涉及分包：')}${packageNames}`,
     );
+    for (const suggestion of item.suggestions) {
+      console.info(`${pc.yellow('建议：')}${suggestion}`);
+    }
   }
 }
 
@@ -243,10 +253,8 @@ export default function vitePluginComponentInsight(options: VitePluginComponentI
     ...DEFAULT_OPTIONS,
     ...options,
   };
-  const reportJsonPath = resolveOutputPath(resolvedOptions.reportJsonPath || resolvedOptions.reportJsonFile);
-  const reportMarkdownPath = resolveOutputPath(
-    resolvedOptions.reportMarkdownPath || resolvedOptions.reportMarkdownFile,
-  );
+  const markdownOutputPath = resolvedOptions.reportMarkdownPath || resolvedOptions.reportMarkdownFile;
+  const reportMarkdownPath = markdownOutputPath ? resolveOutputPath(markdownOutputPath) : '';
 
   return {
     name: 'vite-plugin-component-insight',
@@ -272,6 +280,7 @@ export default function vitePluginComponentInsight(options: VitePluginComponentI
         const jsonContent = readJsonFile<{
           component?: boolean;
           usingComponents?: Record<string, string>;
+          componentPlaceholder?: Record<string, string>;
         }>(jsonFile);
 
         if (!jsonContent) {
@@ -283,14 +292,17 @@ export default function vitePluginComponentInsight(options: VitePluginComponentI
           logicalPath: stripJsonExtension(jsonRelativePath),
           isComponent: jsonContent.component === true,
           usingComponents: jsonContent.usingComponents ?? {},
+          componentPlaceholder: jsonContent.componentPlaceholder ?? {},
         });
       }
 
       const directUsageGraph = new Map<string, Map<string, number>>();
+      const asyncPlaceholderPackagesMap = new Map<string, Set<string>>();
       for (const record of outputJsonMap.values()) {
         const directUsage = new Map<string, number>();
+        const ownerPackage = detectPackageName(record.logicalPath, subPackageRoots);
 
-        for (const componentRef of Object.values(record.usingComponents)) {
+        for (const [componentName, componentRef] of Object.entries(record.usingComponents)) {
           const childJsonRelativePath = resolveUsingComponentPath(record.jsonRelativePath, componentRef, outputDir);
           if (!childJsonRelativePath) {
             continue;
@@ -300,6 +312,12 @@ export default function vitePluginComponentInsight(options: VitePluginComponentI
             continue;
           }
           directUsage.set(childRecord.logicalPath, (directUsage.get(childRecord.logicalPath) ?? 0) + 1);
+
+          if (record.componentPlaceholder[componentName] && ownerPackage.startsWith('sub:')) {
+            const packages = asyncPlaceholderPackagesMap.get(childRecord.logicalPath) ?? new Set<string>();
+            packages.add(ownerPackage);
+            asyncPlaceholderPackagesMap.set(childRecord.logicalPath, packages);
+          }
         }
 
         directUsageGraph.set(record.logicalPath, directUsage);
@@ -369,34 +387,46 @@ export default function vitePluginComponentInsight(options: VitePluginComponentI
         const involvedPackages = Array.from(new Set(pagesForComponent.map((page) => page.packageName)));
         const componentPackage = detectPackageName(componentPath, subPackageRoots);
         const suggestions: string[] = [];
+        const onlyUsedInOnePackage = involvedPackages.length === 1;
+        const singlePackageName = involvedPackages[0];
+        const usedByMainAndSubPackages = involvedPackages.includes('main') && involvedPackages.length > 1;
+        const usedByMultipleSubPackages = !involvedPackages.includes('main') && involvedPackages.length > 1;
+        const asyncPlaceholderPackages = asyncPlaceholderPackagesMap.get(componentPath) ?? new Set<string>();
+        const coveredByAsyncPlaceholder =
+          usedByMultipleSubPackages &&
+          involvedPackages.every((packageName) => asyncPlaceholderPackages.has(packageName));
+        const noNeedSuggestion =
+          !resolvedOptions.enableSuggestions ||
+          (onlyUsedInOnePackage && componentPackage === singlePackageName) ||
+          (usedByMainAndSubPackages && componentPackage === 'main') ||
+          coveredByAsyncPlaceholder;
 
-        if (
-          resolvedOptions.enableSuggestions &&
-          involvedPackages.length === 1 &&
-          involvedPackages[0].startsWith('sub:') &&
-          componentPackage === 'main'
-        ) {
-          suggestions.push(`该组件仅在 ${involvedPackages[0]} 使用，建议考虑移动到对应分包。`);
+        if (noNeedSuggestion) {
+          componentItems.push({
+            component: componentPath,
+            componentPackage,
+            totalUsageCount,
+            pageUsageCount: pagesForComponent.length,
+            pages: pagesForComponent,
+            suggestions,
+          });
+          continue;
         }
 
-        if (resolvedOptions.enableSuggestions && involvedPackages.includes('main') && involvedPackages.length > 1) {
-          suggestions.push('该组件同时被主包和分包使用，建议保留在公共位置。');
+        if (onlyUsedInOnePackage && singlePackageName?.startsWith('sub:') && componentPackage === 'main') {
+          suggestions.push(`该组件仅在 ${singlePackageName} 使用，建议考虑移动到对应分包。`);
         }
 
-        if (resolvedOptions.enableSuggestions && !involvedPackages.includes('main') && involvedPackages.length > 1) {
+        if (usedByMultipleSubPackages) {
           suggestions.push('该组件被多个分包共用，建议评估抽到公共目录。');
         }
 
-        if (resolvedOptions.enableSuggestions && pagesForComponent.length === 1 && totalUsageCount <= 2) {
+        if (pagesForComponent.length === 1 && totalUsageCount <= 2) {
           suggestions.push('该组件仅在单页少量使用，可评估是否需要继续独立维护。');
         }
 
-        if (resolvedOptions.enableSuggestions && componentPackage !== 'main' && involvedPackages.includes('main')) {
+        if (usedByMainAndSubPackages && componentPackage !== 'main') {
           suggestions.push('该组件位于分包目录，但主包也在使用，建议检查目录归属。');
-        }
-
-        if (resolvedOptions.enableSuggestions && suggestions.length === 0) {
-          suggestions.push('当前没有明显的分包优化建议。');
         }
 
         componentItems.push({
@@ -429,11 +459,10 @@ export default function vitePluginComponentInsight(options: VitePluginComponentI
         components: componentItems,
       };
 
-      ensureParentDir(reportJsonPath);
-      ensureParentDir(reportMarkdownPath);
-
-      fs.writeFileSync(reportJsonPath, `${JSON.stringify(report, null, 2)}\n`, 'utf-8');
-      fs.writeFileSync(reportMarkdownPath, `${buildMarkdown(report)}\n`, 'utf-8');
+      if (reportMarkdownPath) {
+        ensureParentDir(reportMarkdownPath);
+        fs.writeFileSync(reportMarkdownPath, `${buildMarkdown(report)}\n`, 'utf-8');
+      }
 
       if (resolvedOptions.logToConsole) {
         logSummary(report);
