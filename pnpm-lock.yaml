@@ -162,6 +162,28 @@ importers:
         specifier: 'catalog:'
         version: 5.2.8(@types/node@18.19.130)(terser@5.44.0)
 
+  packages/vite-plugin-component-insight:
+    dependencies:
+      '@dcloudio/uni-cli-shared':
+        specifier: 3.0.0-alpha-4080120250820001
+        version: 3.0.0-alpha-4080120250820001(postcss@8.5.6)(rollup@4.52.4)(vue@3.4.21(typescript@5.3.3))
+      '@uni_toolkit/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 18.19.130
+      tsup:
+        specifier: 'catalog:'
+        version: 7.2.0(postcss@8.5.6)(typescript@5.3.3)
+      typescript:
+        specifier: 'catalog:'
+        version: 5.3.3
+      vite:
+        specifier: 'catalog:'
+        version: 5.2.8(@types/node@18.19.130)(terser@5.44.0)
+
   packages/webpack-plugin-component-config:
     dependencies:
       '@dcloudio/uni-cli-shared':

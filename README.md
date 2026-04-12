@@ -16,6 +16,12 @@ uni-app 项目设计的插件集合，提供各种实用的构建工具和开发
 
 - [@uni_toolkit/webpack-plugin-component-config](./packages/webpack-plugin-component-config/README.md)
 
+### @uni_toolkit/vite-plugin-component-insight
+
+一个用于 uni-app 项目的 `Vite 插件`，用于分析组件被哪些页面使用、使用多少次，并结合主包与分包关系给出优化建议。
+
+- [@uni_toolkit/vite-plugin-component-insight](./packages/vite-plugin-component-insight/README.md)
+
 ### @uni_toolkit/unplugin-compress-json
 
 一个用于压缩 JSON 文件的 `unplugin 插件`，支持 Vite 和 Webpack。自动压缩 `JSON 文件` ，减小文件体积。
