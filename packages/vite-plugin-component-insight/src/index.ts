@@ -302,7 +302,7 @@ export default function vitePluginComponentInsight(options: VitePluginComponentI
           }
           directUsage.set(childRecord.logicalPath, (directUsage.get(childRecord.logicalPath) ?? 0) + 1);
 
-          if (record.componentPlaceholder[componentName] && ownerPackage.startsWith('sub:')) {
+          if (record.componentPlaceholder[componentName]) {
             const packages = asyncPlaceholderPackagesMap.get(childRecord.logicalPath) ?? new Set<string>();
             packages.add(ownerPackage);
             asyncPlaceholderPackagesMap.set(childRecord.logicalPath, packages);
@@ -381,10 +381,15 @@ export default function vitePluginComponentInsight(options: VitePluginComponentI
         const usedByMainAndSubPackages = involvedPackages.includes('main') && involvedPackages.length > 1;
         const usedByMultipleSubPackages = !involvedPackages.includes('main') && involvedPackages.length > 1;
         const asyncPlaceholderPackages = asyncPlaceholderPackagesMap.get(componentPath) ?? new Set<string>();
+        // Cross-package usage is already valid when every external package reaches the component through placeholders.
+        const crossPackageUsageCoveredByAsyncPlaceholder =
+          componentPackage !== 'main' &&
+          involvedPackages.length > 0 &&
+          involvedPackages
+            .filter((packageName) => packageName !== componentPackage)
+            .every((packageName) => asyncPlaceholderPackages.has(packageName));
         const coveredBySingleAsyncPlaceholder =
           onlyUsedInOnePackage &&
-          singlePackageName?.startsWith('sub:') &&
-          componentPackage.startsWith('sub:') &&
           componentPackage !== singlePackageName &&
           asyncPlaceholderPackages.has(singlePackageName);
         const coveredByAsyncPlaceholder =
@@ -392,7 +397,8 @@ export default function vitePluginComponentInsight(options: VitePluginComponentI
           involvedPackages.every((packageName) => asyncPlaceholderPackages.has(packageName));
         const noNeedSuggestion =
           (onlyUsedInOnePackage && componentPackage === singlePackageName) ||
-          (usedByMainAndSubPackages && componentPackage === 'main') ||
+          (usedByMainAndSubPackages && componentPackage !== 'main') ||
+          crossPackageUsageCoveredByAsyncPlaceholder ||
           coveredBySingleAsyncPlaceholder ||
           coveredByAsyncPlaceholder;
 
@@ -416,8 +422,8 @@ export default function vitePluginComponentInsight(options: VitePluginComponentI
           suggestions.push('该组件被多个分包使用，建议移动到分包并配置 componentPlaceholder 异步化。');
         }
 
-        if (usedByMainAndSubPackages && componentPackage !== 'main') {
-          suggestions.push('该组件同时被主包和分包使用，建议移动到主包。');
+        if (usedByMainAndSubPackages && componentPackage === 'main') {
+          suggestions.push('该组件同时被主包和分包使用，可考虑通过配置 componentPlaceholder 异步化的方式移动到分包。');
         }
 
         componentItems.push({
