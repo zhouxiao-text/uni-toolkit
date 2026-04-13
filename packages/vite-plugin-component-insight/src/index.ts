@@ -44,11 +44,13 @@ interface ComponentInsightReport {
 export interface VitePluginComponentInsightOptions {
   reportMarkdownPath?: string;
   logToConsole?: boolean;
+  exclude?: string[];
 }
 
 const DEFAULT_OPTIONS: Required<VitePluginComponentInsightOptions> = {
   reportMarkdownPath: '',
   logToConsole: true,
+  exclude: ['node-modules', 'uni_modules'],
 };
 
 function normalizeSlashes(value: string) {
@@ -294,6 +296,9 @@ export default function vitePluginComponentInsight(options: VitePluginComponentI
         for (const [componentName, componentRef] of Object.entries(record.usingComponents)) {
           const childJsonRelativePath = resolveUsingComponentPath(record.jsonRelativePath, componentRef, outputDir);
           if (!childJsonRelativePath) {
+            continue;
+          }
+          if (resolvedOptions.exclude && resolvedOptions.exclude.some((val) => componentRef.indexOf(val) > -1)) {
             continue;
           }
           const childRecord = outputJsonMap.get(childJsonRelativePath);
