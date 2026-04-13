@@ -4,6 +4,7 @@ import { parseJson, parseSubpackagesRootOnce } from '@dcloudio/uni-cli-shared';
 import { isMiniProgram } from '@uni_toolkit/shared';
 import pc from 'picocolors';
 import type { PluginOption } from 'vite';
+import { createFilter } from 'vite';
 
 interface PageEntry {
   path: string;
@@ -45,12 +46,14 @@ export interface VitePluginComponentInsightOptions {
   reportMarkdownPath?: string;
   logToConsole?: boolean;
   exclude?: string[];
+  include?: string[];
 }
 
 const DEFAULT_OPTIONS: Required<VitePluginComponentInsightOptions> = {
   reportMarkdownPath: '',
   logToConsole: true,
-  exclude: ['node-modules', 'uni_modules'],
+  exclude: ['**/node-modules/**', '**/node_modules/**', '**/uni_modules/**'],
+  include: [],
 };
 
 function normalizeSlashes(value: string) {
@@ -266,6 +269,8 @@ export default function vitePluginComponentInsight(options: VitePluginComponentI
       const jsonFiles = listJsonFiles(outputDir);
       const outputJsonMap = new Map<string, OutputJsonRecord>();
 
+      const flutterPath = createFilter(resolvedOptions.include, resolvedOptions.exclude);
+
       for (const jsonFile of jsonFiles) {
         const jsonRelativePath = normalizeSlashes(path.relative(outputDir, jsonFile));
         const jsonContent = readJsonFile<{
@@ -298,9 +303,11 @@ export default function vitePluginComponentInsight(options: VitePluginComponentI
           if (!childJsonRelativePath) {
             continue;
           }
-          if (resolvedOptions.exclude && resolvedOptions.exclude.some((val) => componentRef.indexOf(val) > -1)) {
+
+          if (flutterPath(componentRef)) {
             continue;
           }
+
           const childRecord = outputJsonMap.get(childJsonRelativePath);
           if (!childRecord?.isComponent) {
             continue;
